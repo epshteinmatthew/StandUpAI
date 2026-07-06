@@ -7,12 +7,16 @@ import { DeadlinesEditor } from '@/components/admin/deadlines-editor';
 import { MeetingLogsPanel } from '@/components/admin/meeting-logs-panel';
 import { TeamPanel } from '@/components/admin/team-panel';
 import { GithubIntegrationPanel } from '@/components/admin/github-integration-panel';
+import { AdminTabs, isAdminTab, type AdminTab } from '@/components/admin/admin-tabs';
 import { listTeamMembers } from '@/app/actions/invites';
 import { getGithubIntegration } from '@/app/actions/github';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { AdminMeetingLog, Company, Team } from '@/types/database';
 
-export default async function AdminPage() {
+interface AdminPageProps {
+  searchParams?: { tab?: string };
+}
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   const user = await requireAdmin();
   const supabase = await createClient();
 
@@ -75,31 +79,26 @@ export default async function AdminPage() {
   const teamData = (teams ?? []) as Pick<Team, 'id' | 'name' | 'deadlines'>[];
   const { members, invites } = await listTeamMembers();
   const githubIntegration = await getGithubIntegration();
+  const initialTab: AdminTab = isAdminTab(searchParams?.tab) ? searchParams.tab : 'goals';
 
   return (
     <AppShell title="Admin dashboard">
-      <Tabs defaultValue="goals" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="goals">Goals & deadlines</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="meetings">Meeting logs</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="goals" className="space-y-6">
-          <GoalsEditor initialGoals={companyData.goals} />
-          <DeadlinesEditor teams={teamData} />
-        </TabsContent>
-
-        <TabsContent value="team">
+      <AdminTabs
+        initialTab={initialTab}
+        goals={
+          <>
+            <GoalsEditor initialGoals={companyData.goals} />
+            <DeadlinesEditor teams={teamData} />
+          </>
+        }
+        team={
           <TeamPanel
             teams={teamData.map((t) => ({ id: t.id, name: t.name }))}
             members={members}
             invites={invites}
           />
-        </TabsContent>
-
-        <TabsContent value="integrations">
+        }
+        integrations={
           <GithubIntegrationPanel
             integration={githubIntegration}
             members={members.map((m) => ({
@@ -109,15 +108,14 @@ export default async function AdminPage() {
               github_username: m.github_username,
             }))}
           />
-        </TabsContent>
-
-        <TabsContent value="meetings">
+        }
+        meetings={
           <MeetingLogsPanel
             meetings={meetings}
             teams={teamData.map((t) => ({ id: t.id, name: t.name }))}
           />
-        </TabsContent>
-      </Tabs>
+        }
+      />
     </AppShell>
   );
 }
