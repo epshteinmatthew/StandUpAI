@@ -13,17 +13,25 @@ export async function EmployeeDashboard() {
   const user = await requireEmployee();
   const supabase = await createClient();
 
-  const { data: tasks } = await supabase
+  const { data: tasks, error: tasksError } = await supabase
     .from('employee_today_tasks')
     .select('*')
     .eq('assigned_to', user.id)
     .order('due_date', { ascending: true });
 
-  const { data: agent } = await supabase
+  if (tasksError) {
+    console.error('employee_today_tasks query failed:', tasksError.message);
+  }
+
+  const { data: agent, error: agentError } = await supabase
     .from('agents')
     .select('*')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
+
+  if (agentError) {
+    console.error('agents query failed:', agentError.message);
+  }
 
   const taskList = (tasks ?? []) as EmployeeTodayTask[];
   const agentData = agent as Agent | null;
