@@ -91,10 +91,12 @@ After connecting Inngest (Part 4), trigger a **Redeploy** on Vercel so `/api/inn
 ## Part 4 — Inngest Cloud
 
 1. [app.inngest.com](https://app.inngest.com) → create app.
-2. **App URL**: `https://YOUR_APP.vercel.app/api/inngest`
-3. Copy **Event Key** and **Signing Key** into Vercel env vars.
-4. Redeploy Vercel.
-5. In Inngest dashboard, confirm functions appear:
+2. **App URL**: use your **stable production domain**, e.g. `https://YOUR_APP.vercel.app/api/inngest`
+   - Do **not** use a preview URL like `https://your-app-abc123-team.vercel.app/...` (changes every deploy).
+3. Copy **Event Key** and **Signing Key** into Vercel env vars (`INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`).
+4. **Disable Vercel Deployment Protection for Production** (see troubleshooting below) — Inngest must reach `/api/inngest` without SSO login.
+5. Redeploy Vercel.
+6. In Inngest dashboard, confirm functions appear:
    - `daily-agent-sync` (cron 9:00 UTC)
    - `manual-team-sync`
 
@@ -159,6 +161,8 @@ Then use `/setup` locally (no seed script anymore).
 | Issue | Fix |
 |-------|-----|
 | `/setup` redirects to login | Users already exist; sign in or reset DB |
+| Inngest sync error: "We could not reach your URL" | **Vercel Deployment Protection** is blocking Inngest. Vercel → Project → Settings → **Deployment Protection** → disable for Production (or protect Preview only). Then set Inngest App URL to your stable production domain, not a preview hash URL. |
+| Inngest shows events but no functions | Set `INNGEST_SIGNING_KEY` on Vercel (not just event key), redeploy, resync |
 | Sync does nothing | Check Inngest dashboard + `MISTRAL_API_KEY` on Vercel |
 | GitHub webhook 401 | Secret mismatch — rotate in Admin → Integrations and update GitHub |
 | Invite links wrong host | Set `NEXT_PUBLIC_APP_URL` on Vercel |

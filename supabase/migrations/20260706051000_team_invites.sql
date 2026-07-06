@@ -1,5 +1,7 @@
 -- Team member invites (admin-created; accepted via /invite/[token])
 
+create extension if not exists pgcrypto with schema extensions;
+
 create table public.team_invites (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies (id) on delete cascade,
@@ -7,7 +9,7 @@ create table public.team_invites (
   email text not null,
   full_name text not null default '',
   role public.user_role not null default 'employee',
-  token text not null unique default encode(gen_random_bytes(32), 'hex'),
+  token text not null unique default encode(extensions.gen_random_bytes(32), 'hex'),
   invited_by uuid not null references public.users (id) on delete cascade,
   expires_at timestamptz not null default (now() + interval '7 days'),
   accepted_at timestamptz,

@@ -56,7 +56,7 @@ export async function runDailySyncForTeam(teamId: string) {
     const result = await runMeetingProtocol(context);
 
     for (const completion of result.checkOffCompletions) {
-      if (!completion.commit_id) continue;
+      if (!completion.action_item_id || !completion.commit_id) continue;
 
       await supabase.rpc('complete_action_item_via_commit', {
         p_action_item_id: completion.action_item_id,

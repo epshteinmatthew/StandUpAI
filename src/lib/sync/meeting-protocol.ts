@@ -14,7 +14,7 @@ const model = mistral(process.env.MISTRAL_MODEL ?? 'mistral-small-latest');
 const checkOffSchema = z.object({
   completions: z.array(
     z.object({
-      action_item_id: z.string(),
+      action_item_id: z.string().nullish(),
       commit_id: z.string().nullable(),
       reason: z.string(),
     })
@@ -93,6 +93,16 @@ function withTimestamps(turns: Omit<AgentTurn, 'timestamp'>[]): AgentTurn[] {
   }));
 }
 
+type CheckOffCompletion = z.infer<typeof checkOffSchema>['completions'][number];
+
+function validCheckOffCompletions(
+  completions: CheckOffCompletion[]
+): Array<CheckOffCompletion & { action_item_id: string }> {
+  return completions.filter(
+    (c): c is CheckOffCompletion & { action_item_id: string } => Boolean(c.action_item_id)
+  );
+}
+
 function formatAgentContext(agent: AgentSyncAgentBundle): string {
   return JSON.stringify(
     {
@@ -122,7 +132,8 @@ Company goals:
 ${context.company.goals}
 
 For each employee agent, cross-reference their recent commits with pending action items.
-Mark items as completed ONLY when commit messages clearly indicate the work was done.
+Mark items as completed ONLY when commit messages clearly indicate the work was done AND a matching pending action_item id exists.
+Do not add a completion entry when there is no pending task to check off — mention goal-aligned commits in agent_turns instead.
 Each agent should briefly announce what was completed and why.
 
 Team context:
@@ -135,7 +146,7 @@ ${context.agents.map((a) => `Agent ${a.full_name} (${a.agent_id}):\n${formatAgen
       agent_turns: withTimestamps(object.agent_turns),
       decisions: object.completions.map((c) => c.reason),
     },
-    checkOffCompletions: object.completions,
+    checkOffCompletions: validCheckOffCompletions(object.completions),
   };
 }
 
@@ -246,7 +257,7 @@ Use EXACT ids from this team context (action_item id, commit id, agent_id, user_
 ${context.agents.map((a) => `Agent ${a.full_name} (agent_id=${a.agent_id}, user_id=${a.user_id}):\n${formatAgentContext(a)}`).join('\n\n')}
 
 Steps to produce:
-1. check_off — cross-reference commits vs pending tasks; only complete when commit message proves work done
+1. check_off — cross-reference commits vs pending tasks; only add completions when a pending action_item id matches; omit action_item_id when no pending task exists
 2. blocker_resolution — identify blockers from notes, commit gaps, stalled tasks; agents discuss resolutions
 3. agenda_goals — align today's focus with company goals and deadlines
 4. task_assignment — assign specific new tasks for next 24h to valid user_ids above
@@ -306,7 +317,7 @@ export async function runFullMeetingProtocol(
   return {
     transcript,
     summary: object.summary,
-    checkOffCompletions: object.check_off.completions,
+    checkOffCompletions: validCheckOffCompletions(object.check_off.completions),
     newTasks: object.task_assignment.new_tasks,
   };
 }
