@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { formatErrorForDisplay, serializeError } from '@/lib/debug/errors';
 import { Button } from '@/components/ui/button';
 
 export default function Error({
@@ -14,18 +15,22 @@ export default function Error({
     console.error(error);
   }, [error]);
 
+  const details = formatErrorForDisplay(serializeError(error));
   const isMissingTable = error.message.includes('team_invites');
 
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
-      <div className="max-w-md space-y-4 text-center">
+      <div className="w-full max-w-3xl space-y-4">
         <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="text-sm text-muted-foreground">
-          {isMissingTable
-            ? 'Database migration missing. Run: npx supabase migration up'
-            : error.message || 'An unexpected error occurred.'}
-        </p>
-        <div className="flex justify-center gap-2">
+        {isMissingTable ? (
+          <p className="text-sm text-muted-foreground">
+            Database migration missing. Run: npx supabase migration up
+          </p>
+        ) : null}
+        <pre className="max-h-[70vh] overflow-auto rounded-md border bg-muted p-4 text-left text-xs whitespace-pre-wrap break-words">
+          {details}
+        </pre>
+        <div className="flex gap-2">
           <Button onClick={() => reset()}>Try again</Button>
           <Button variant="outline" onClick={() => window.location.assign('/')}>
             Home
