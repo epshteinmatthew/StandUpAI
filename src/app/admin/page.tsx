@@ -79,7 +79,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const teamData = (teams ?? []) as Pick<Team, 'id' | 'name' | 'deadlines'>[];
   const { members, invites } = await listTeamMembers();
   const githubIntegration = await getGithubIntegration();
-  const initialTab: AdminTab = isAdminTab(searchParams?.tab) ? searchParams.tab : 'goals';
+  const tabParam = searchParams?.tab;
+  const initialTab: AdminTab = isAdminTab(tabParam) ? tabParam : 'goals';
 
   return (
     <AppShell title="Admin dashboard">
