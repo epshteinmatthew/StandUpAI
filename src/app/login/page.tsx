@@ -1,9 +1,9 @@
 import { canSetupCompany } from '@/lib/auth/setup';
 import { LoginForm } from '@/components/auth/login-form';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 
-export default function LoginPage() {
-  return withErrorDisplay(async () => {
+export default async function LoginPage() {
+  try {
     const showSetup = await canSetupCompany();
 
     return (
@@ -11,5 +11,9 @@ export default function LoginPage() {
         <LoginForm showSetup={showSetup} />
       </main>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }

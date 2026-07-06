@@ -2,10 +2,10 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AppShell } from '@/components/layout/app-shell';
 import { EmployeeDashboard } from '@/components/employee/employee-dashboard';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 
-export default function DashboardPage() {
-  return withErrorDisplay(async () => {
+export default async function DashboardPage() {
+  try {
     const user = await getCurrentUser();
     if (!user) redirect('/login');
     if (user.role === 'admin') redirect('/admin');
@@ -15,5 +15,9 @@ export default function DashboardPage() {
         <EmployeeDashboard />
       </AppShell>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }

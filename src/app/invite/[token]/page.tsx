@@ -4,14 +4,14 @@ import { getInvitePreview } from '@/app/actions/invites';
 import { AcceptInviteForm } from '@/components/invite/accept-invite-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 
 interface InvitePageProps {
   params: { token: string };
 }
 
-export default function InvitePage({ params }: InvitePageProps) {
-  return withErrorDisplay(async () => {
+export default async function InvitePage({ params }: InvitePageProps) {
+  try {
     const { token } = params;
     const preview = await getInvitePreview(token);
 
@@ -58,5 +58,9 @@ export default function InvitePage({ params }: InvitePageProps) {
         <AcceptInviteForm token={token} preview={preview} />
       </main>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }

@@ -3,10 +3,10 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { canSetupCompany } from '@/lib/auth/setup';
 import { Button } from '@/components/ui/button';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 
-export default function HomePage() {
-  return withErrorDisplay(async () => {
+export default async function HomePage() {
+  try {
     const user = await getCurrentUser();
     if (user) {
       redirect(user.role === 'admin' ? '/admin' : '/dashboard');
@@ -35,5 +35,9 @@ export default function HomePage() {
         </div>
       </main>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }

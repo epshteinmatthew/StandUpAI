@@ -10,15 +10,15 @@ import { GithubIntegrationPanel } from '@/components/admin/github-integration-pa
 import { AdminTabs, isAdminTab, type AdminTab } from '@/components/admin/admin-tabs';
 import { listTeamMembers } from '@/app/actions/invites';
 import { getGithubIntegration } from '@/app/actions/github';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 import type { AdminMeetingLog, Company, Team } from '@/types/database';
 
 interface AdminPageProps {
   searchParams?: { tab?: string };
 }
 
-export default function AdminPage({ searchParams }: AdminPageProps) {
-  return withErrorDisplay(async () => {
+export default async function AdminPage({ searchParams }: AdminPageProps) {
+  try {
     const user = await requireAdmin();
     const supabase = await createClient();
 
@@ -121,5 +121,9 @@ export default function AdminPage({ searchParams }: AdminPageProps) {
         />
       </AppShell>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }

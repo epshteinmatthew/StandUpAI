@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { canSetupCompany } from '@/lib/auth/setup';
 import { SetupForm } from '@/components/setup/setup-form';
 import { Button } from '@/components/ui/button';
-import { withErrorDisplay } from '@/lib/debug/with-error-display';
+import { renderCaughtError } from '@/lib/debug/with-error-display';
 
-export default function SetupPage() {
-  return withErrorDisplay(async () => {
+export default async function SetupPage() {
+  try {
     const allowed = await canSetupCompany();
     if (!allowed) redirect('/login');
 
@@ -18,5 +18,9 @@ export default function SetupPage() {
         </Button>
       </main>
     );
-  });
+  } catch (error) {
+    const errorUI = renderCaughtError(error);
+    if (errorUI) return errorUI;
+    throw error;
+  }
 }
