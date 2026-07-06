@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { serverSupabaseOptions } from '@/lib/supabase/server-options';
+import ws from 'ws';
+
+/** Vercel/Node 20 has no native WebSocket; supabase-js requires one at client init. */
+const nodeRealtimeOptions = {
+  realtime: {
+    transport: ws as unknown as typeof WebSocket,
+  },
+};
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -9,7 +16,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      ...serverSupabaseOptions,
+      ...nodeRealtimeOptions,
       cookies: {
         getAll() {
           return cookieStore.getAll();
